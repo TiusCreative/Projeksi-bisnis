@@ -53,7 +53,7 @@ export default function SimulationPage() {
         where('business_id', '==', selectedBusiness.id)
       );
       const projectionsSnap = await getDocs(projectionsQ);
-      const projections = projectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const projections = projectionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
 
       // Fetch invoices for actual data
       const invoicesQ = query(

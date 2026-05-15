@@ -5,109 +5,114 @@ import { useRouter } from 'next/navigation';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useBusiness } from '@/app/context/BusinessContext';
-import Link from 'next/link';
 
 export default function CreateBusinessPage() {
   const router = useRouter();
-  const { fetchBusinesses } = useBusiness();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    category: 'Retail',
-    logo_url: '',
-    address: '',
-    target_omzet: 0
-  });
+  const { refreshBusinesses } = useBusiness();
+
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [targetOmzet, setTargetOmzet] = useState('');
+  const [address, setAddress] = useState('');
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) {
-      alert('Anda harus login terlebih dahulu.');
+    setError('');
+    
+    const user = auth.currentUser;
+    if (!user) {
+      setError('Anda harus login untuk membuat bisnis.');
       return;
     }
-    
-    setLoading(true);
+
+    if (!name.trim()) {
+      setError('Nama bisnis wajib diisi.');
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
-      // Simpan data bisnis ke Firebase
       await addDoc(collection(db, 'businesses'), {
-        name: formData.name,
-        category: formData.category,
-        logo_url: formData.logo_url,
-        address: formData.address,
-        target_omzet: Number(formData.target_omzet),
-        owner_id: auth.currentUser.uid,
-        members: [auth.currentUser.uid],
+        name: name.trim(),
+        category: category.trim(),
+        target_omzet: Number(targetOmzet) || 0,
+        address: address.trim(),
+        owner_id: user.uid,
+        members: [user.uid],
         roles: {
-          [auth.currentUser.uid]: 'owner'
+          [user.uid]: 'Owner'
         },
-        created_at: serverTimestamp(),
-        updated_at: serverTimestamp()
+        created_at: serverTimestamp()
       });
 
-      // Update state global dari Context jika fungsi fetch tersedia
-      if (fetchBusinesses) await fetchBusinesses();
+      // Perbarui state bisnis secara global
+      refreshBusinesses();
       
-      alert('Bisnis berhasil dibuat!');
-      router.push('/dashboard/businesses');
-    } catch (error) {
-      console.error('Error creating business:', error);
-      alert('Terjadi kesalahan saat membuat bisnis.');
+      // Arahkan kembali ke dashboard
+      router.push('/dashboard');
+    } catch (err: any) {
+      console.error('Gagal membuat bisnis:', err);
+      setError('Terjadi kesalahan saat membuat bisnis: ' + err.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 md:p-8 space-y-6">
-      <Link href="/dashboard/businesses" className="text-indigo-600 hover:text-indigo-700 text-sm font-medium inline-block">← Kembali ke Daftar Bisnis</Link>
-      
-      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Buat Bisnis Baru</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-8">Masukkan informasi dasar untuk mendaftarkan bisnis Anda ke sistem.</p>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Nama Bisnis *</label>
-            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow" placeholder="Contoh: Toko Sembako Berkah" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Kategori Bisnis</label>
-              <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="Retail">Retail / Toko</option>
-                <option value="F&B">F&B / Kuliner</option>
-                <option value="Jasa">Jasa / Layanan</option>
-                <option value="Teknologi">Teknologi / Startup</option>
-                <option value="Manufaktur">Manufaktur / Produksi</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Target Omzet Bulanan (Rp)</label>
-              <input type="number" value={formData.target_omzet || ''} onChange={(e) => setFormData({...formData, target_omzet: Number(e.target.value)})} className="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="50000000" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Alamat (Opsional)</label>
-            <textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500" rows={3} placeholder="Alamat lengkap bisnis Anda" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">URL Logo (Opsional)</label>
-            <input type="url" value={formData.logo_url} onChange={(e) => setFormData({...formData, logo_url: e.target.value})} className="w-full p-3 border border-gray-300 rounded-xl dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="https://example.com/logo.png" />
-          </div>
-
-          <div className="pt-4">
-            <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition-colors disabled:opacity-50">
-              {loading ? 'Menyimpan...' : 'Simpan Bisnis'}
-            </button>
-          </div>
-        </form>
+    <div className="max-w-4xl mx-auto p-6 md:p-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Buat Bisnis Baru</h1>
+        <p className="text-gray-600 dark:text-gray-400">Silakan masukkan detail bisnis Anda</p>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nama Bisnis *</label>
+          <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder="Contoh: Toko Maju Jaya" required
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kategori Bisnis</label>
+          <input id="category" type="text" value={category} onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder="Contoh: Retail, F&B, Jasa"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="targetOmzet" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Target Omzet Bulanan (Rp)</label>
+          <input id="targetOmzet" type="number" value={targetOmzet} onChange={(e) => setTargetOmzet(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder="Contoh: 50000000"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Alamat Bisnis</label>
+          <textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder="Alamat lengkap..." rows={3}
+          />
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button type="button" onClick={() => router.back()} className="px-6 py-2 border border-gray-300 text-gray-700 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Batal</button>
+          <button type="submit" disabled={isLoading} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 md:flex-none">{isLoading ? 'Menyimpan...' : 'Buat Bisnis'}</button>
+        </div>
+      </form>
     </div>
   );
 }

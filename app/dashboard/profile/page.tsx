@@ -204,7 +204,7 @@ export default function ProfilePage() {
             <span className="text-gray-600 dark:text-gray-400">Provider</span>
             <span className="text-gray-900 dark:text-white">{auth.currentUser?.providerData[0]?.providerId || '-'}</span>
           </div>
-          <div className="flex justify-between items-center py-2">
+          <div className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700">
             <span className="text-gray-600 dark:text-gray-400">Email Verified</span>
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
               auth.currentUser?.emailVerified 
@@ -212,6 +212,14 @@ export default function ProfilePage() {
                 : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
             }`}>
               {auth.currentUser?.emailVerified ? 'Terverifikasi' : 'Belum Verifikasi'}
+            </span>
+          </div>
+          <div className="flex justify-between items-center py-2">
+            <span className="text-gray-600 dark:text-gray-400">Terakhir Diperbarui</span>
+            <span className="text-gray-900 dark:text-white text-sm">
+              {userData?.updated_at 
+                ? new Date(userData.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) 
+                : '-'}
             </span>
           </div>
         </div>

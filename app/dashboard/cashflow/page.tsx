@@ -5,10 +5,23 @@ import { useBusiness } from '@/app/context/BusinessContext';
 import { db, auth } from '@/lib/firebase';
 import { collection, addDoc, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 
+interface Cashflow {
+  id: string;
+  business_id: string;
+  user_id: string;
+  type: string;
+  amount: number;
+  category: string;
+  date: string;
+  description?: string;
+  created_at?: any;
+}
+
 export default function CashflowPage() {
   const { selectedBusiness } = useBusiness();
   const [loading, setLoading] = useState(false);
-  const [cashflows, setCashflows] = useState<any[]>([]);
+  const [cashflows, setCashflows] = useState<Cashflow[]>([]);
+  const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0, 7));
   const [formData, setFormData] = useState({
     type: 'income',
     amount: '',
@@ -22,7 +35,7 @@ export default function CashflowPage() {
     try {
       const q = query(collection(db, 'cashflows'), where('business_id', '==', selectedBusiness.id));
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Cashflow));
       
       // Mengurutkan data berdasarkan tanggal terbaru secara lokal
       data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -65,6 +78,8 @@ export default function CashflowPage() {
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+
+  const filteredCashflows = cashflows.filter(item => item.date.startsWith(filterMonth));
 
   if (!selectedBusiness) return <div className="p-8 text-center text-gray-500 mt-10">Silakan pilih bisnis terlebih dahulu dari menu di atas.</div>;
 
@@ -130,12 +145,20 @@ export default function CashflowPage() {
 
         {/* Daftar Transaksi */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-6">Riwayat Transaksi</h3>
-          {cashflows.length === 0 ? (
-            <div className="text-center p-8 text-gray-500">Belum ada transaksi yang dicatat.</div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white">Riwayat Transaksi</h3>
+            <input 
+              type="month" 
+              value={filterMonth} 
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="p-2 border border-gray-300 rounded-lg text-sm dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+          {filteredCashflows.length === 0 ? (
+            <div className="text-center p-8 text-gray-500">Belum ada transaksi yang dicatat untuk bulan ini.</div>
           ) : (
             <div className="space-y-4">
-              {cashflows.map((item) => (
+              {filteredCashflows.map((item) => (
                 <div key={item.id} className="flex justify-between items-center p-4 border border-gray-100 dark:border-gray-700 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <div className="flex gap-4 items-center">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${item.type === 'income' ? 'bg-green-100 text-green-600 dark:bg-green-900/30' : 'bg-red-100 text-red-600 dark:bg-red-900/30'}`}>{item.type === 'income' ? '↓' : '↑'}</div>

@@ -20,7 +20,7 @@ export class OCRService {
    * Process image file and extract text
    * @param file - Image file to process
    */
-  static async processImage(file: File): Promise<OCRResult> {
+  static async processImage(_file: File): Promise<OCRResult> {
     // Placeholder for OCR implementation
     // In production, this would use Tesseract.js or cloud OCR service
     
@@ -39,7 +39,7 @@ export class OCRService {
    * Parse extracted text into financial transactions
    * @param text - Extracted text from OCR
    */
-  static parseFinancialData(text: string): Array<{
+  static parseFinancialData(_text: string): Array<{
     type: 'income' | 'expense';
     amount: number;
     description: string;
@@ -56,8 +56,6 @@ export class OCRService {
     }> = [];
 
     // Example patterns (would be more sophisticated in production)
-    const amountPattern = /Rp\s*([\d.,]+)/g;
-    const datePattern = /(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/g;
 
     return transactions;
   }

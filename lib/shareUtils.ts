@@ -67,3 +67,58 @@ export const exportToJSON = (filename: string, data: any[]) => {
   link.download = filename;
   link.click();
 };
+
+// Tambahkan parameter url (opsional) agar bisa menerima 2 argumen
+export const shareToTelegram = (message: string, url?: string) => {
+  const fullMessage = url ? `${message}\n${url}` : message;
+  const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url || window.location.href)}&text=${encodeURIComponent(fullMessage)}`;
+  window.open(telegramUrl, '_blank');
+};
+
+export const shareToTwitter = (message: string, url?: string) => {
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}${url ? `&url=${encodeURIComponent(url)}` : ''}`;
+  window.open(twitterUrl, '_blank');
+};
+
+export const shareToFacebook = (url?: string, message?: string) => {
+  const shareUrl = url || window.location.href;
+  const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}${message ? `&quote=${encodeURIComponent(message)}` : ''}`;
+  window.open(fbUrl, '_blank');
+};
+
+export const shareToLinkedIn = (url?: string, message?: string) => {
+  const shareUrl = url || window.location.href;
+  const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}${message ? `&summary=${encodeURIComponent(message)}` : ''}`;
+  // LinkedIn modern lebih fokus pada URL, tapi kita tambahkan message sebagai summary
+  window.open(liUrl, '_blank');
+};
+
+// Ganti fungsi copyToClipboard lama dengan ini:
+export const copyToClipboard = async (text: string): Promise<boolean> => {
+  try {
+    await navigator.clipboard.writeText(text);
+    // Kita hapus alert() agar tidak mengganggu UI, 
+    // karena ShareButtons.tsx sudah menangani status "Copied" sendiri.
+    return true; 
+  } catch (err) {
+    console.error('Gagal menyalin link:', err);
+    return false;
+  }
+};
+
+export const shareViaWebShare = async (title: string, text: string, url: string): Promise<boolean> => {
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ title, text, url });
+      return true; // Berhasil share
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Error saat berbagi:', err);
+      }
+      return false; // Gagal atau dibatalkan user
+    }
+  } else {
+    // Fallback jika browser tidak mendukung
+    return await copyToClipboard(url); 
+  }
+};

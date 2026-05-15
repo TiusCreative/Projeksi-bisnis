@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useBusiness } from '@/app/context/BusinessContext';
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function ProjectionsPage() {
@@ -30,7 +30,7 @@ export default function ProjectionsPage() {
     try {
       const q = query(collection(db, 'projections'), where('business_id', '==', selectedBusiness.id));
       const snap = await getDocs(q);
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       // Urutkan lokal berdasarkan created_at karena index composite firebase mungkin belum dibuat
       data.sort((a, b) => (b.created_at?.seconds || 0) - (a.created_at?.seconds || 0));
       setSavedProjections(data);

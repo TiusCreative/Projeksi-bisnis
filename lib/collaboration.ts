@@ -3,7 +3,7 @@
  * Handles real-time updates and collaboration features using Firebase Realtime Database
  */
 
-import { db } from './firebase';
+import { realtimeDb } from './firebase';
 import { ref, onValue, update, push, remove } from 'firebase/database';
 
 export interface CollaborationEvent {
@@ -22,7 +22,7 @@ export class CollaborationService {
     businessId: string,
     callback: (event: CollaborationEvent) => void
   ) {
-    const updatesRef = ref(db, `businesses/${businessId}/updates`);
+    const updatesRef = ref(realtimeDb, `businesses/${businessId}/updates`);
     return onValue(updatesRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -36,7 +36,7 @@ export class CollaborationService {
    * Add a collaboration event
    */
   static async addEvent(businessId: string, event: CollaborationEvent) {
-    const updatesRef = ref(db, `businesses/${businessId}/updates`);
+    const updatesRef = ref(realtimeDb, `businesses/${businessId}/updates`);
     const newEventRef = push(updatesRef);
     await update(newEventRef, {
       ...event,
@@ -48,7 +48,7 @@ export class CollaborationService {
    * Track user viewing a page
    */
   static async trackView(businessId: string, userId: string, userName: string, page: string) {
-    const viewersRef = ref(db, `businesses/${businessId}/viewers/${userId}`);
+    const viewersRef = ref(realtimeDb, `businesses/${businessId}/viewers/${userId}`);
     await update(viewersRef, {
       userName,
       page,
@@ -60,7 +60,7 @@ export class CollaborationService {
    * Remove user from viewers
    */
   static async removeViewer(businessId: string, userId: string) {
-    const viewerRef = ref(db, `businesses/${businessId}/viewers/${userId}`);
+    const viewerRef = ref(realtimeDb, `businesses/${businessId}/viewers/${userId}`);
     await remove(viewerRef);
   }
 
@@ -68,7 +68,7 @@ export class CollaborationService {
    * Get current viewers of a business
    */
   static getCurrentViewers(businessId: string, callback: (viewers: any[]) => void) {
-    const viewersRef = ref(db, `businesses/${businessId}/viewers`);
+    const viewersRef = ref(realtimeDb, `businesses/${businessId}/viewers`);
     return onValue(viewersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -90,7 +90,7 @@ export class CollaborationService {
     userName: string,
     comment: string
   ) {
-    const commentsRef = ref(db, `businesses/${businessId}/documents/${documentId}/comments`);
+    const commentsRef = ref(realtimeDb, `businesses/${businessId}/documents/${documentId}/comments`);
     const newCommentRef = push(commentsRef);
     await update(newCommentRef, {
       userId,
@@ -117,7 +117,7 @@ export class CollaborationService {
     documentId: string,
     callback: (comments: any[]) => void
   ) {
-    const commentsRef = ref(db, `businesses/${businessId}/documents/${documentId}/comments`);
+    const commentsRef = ref(realtimeDb, `businesses/${businessId}/documents/${documentId}/comments`);
     return onValue(commentsRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {

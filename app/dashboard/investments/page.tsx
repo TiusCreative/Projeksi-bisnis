@@ -33,9 +33,9 @@ export default function InvestmentsPage() {
             }
           });
 
-          const summaryResult = await cashflowService.getCashflowSummary(selectedBusiness.id);
+          const summaryResult = await cashflowService.calculateCashflowSummary(selectedBusiness.id);
           
-          if (summaryResult.success) {
+          if (summaryResult.success && summaryResult.data) {
             const summary = summaryResult.data;
             
             const recs = InvestmentService.generateRecommendations({

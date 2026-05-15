@@ -5,7 +5,6 @@ import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { useBusiness } from '@/app/context/BusinessContext';
 import { auth } from '@/lib/firebase';
-import { midtransService } from '@/lib/midtrans';
 
 interface SubscriptionPackage {
   id: string;

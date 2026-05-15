@@ -12,6 +12,7 @@ interface Business {
   target_omzet?: number;
   address?: string;
   logo_url?: string;
+  subscription?: string;
 }
 
 interface BusinessContextType {
@@ -49,7 +50,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
           category: data.category,
           target_omzet: data.target_omzet,
           address: data.address,
-          logo_url: data.logo_url
+          logo_url: data.logo_url,
+          subscription: data.subscription
         });
       });
       snapMember.docs.forEach(doc => {
@@ -63,7 +65,8 @@ export function BusinessProvider({ children }: { children: ReactNode }) {
             category: data.category,
             target_omzet: data.target_omzet,
             address: data.address,
-            logo_url: data.logo_url
+            logo_url: data.logo_url,
+            subscription: data.subscription
           });
         }
       });

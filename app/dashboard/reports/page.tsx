@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useBusiness } from '@/app/context/BusinessContext';
 
 export default function ReportsPage() {
@@ -132,6 +132,7 @@ export default function ReportsPage() {
         hpp = filterByDate(hpp, 'createdAt');
         cashflows = filterByDate(cashflows, 'date');
         cashflows = filterByType(cashflows);
+        cashflows = filterByCategory(cashflows);
 
         data.invoices = invoices;
         data.hpp = hpp;
