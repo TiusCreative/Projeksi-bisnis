@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Cek apakah user adalah Admin berdasarkan email di settings/admins
+    function isAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/settings/admins) &&
+             request.auth.token.email in get(/databases/$(database)/documents/settings/admins).data.emails;
+    }
+
+    // Cek apakah user adalah owner atau member dari bisnis tertentu
+    function isBusinessOwner(businessId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/businesses/$(businessId)).data.owner_id == request.auth.uid;
+    }
+
+    function isBusinessMember(businessId) {
+      return isAuthenticated() && (
+        get(/databases/$(database)/documents/businesses/$(businessId)).data.owner_id == request.auth.uid ||
+        (request.auth.uid in get(/databases/$(database)/documents/businesses/$(businessId)).data.members)
+      );
+    }
+
+    // Cek apakah dokumen terkait dengan bisnis user
+    function isBusinessDocument(docId) {
+      return isAuthenticated() && isBusinessMember(resource.data.business_id);
+    }
+
+    function isBusinessDocumentCreate() {
+      return isAuthenticated() && isBusinessMember(request.resource.data.business_id);
+    }
+
+    // ============================================
+    // SETTINGS COLLECTION
+    // ============================================
+    match /settings/{document} {
+      // Read: Semua user authenticated bisa baca settings
+      allow read: if true; // Allow read for development
+      // Write: Hanya admin yang bisa update settings
+      allow write: if true; // Allow write for development
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Read: User bisa baca data sendiri, admin bisa baca semua (allow all for development)
+      allow read: if true; // Allow read for development
+      // Create: User bisa create data sendiri
+      allow create: if isAuthenticated() && isOwner(userId);
+      // Update: User bisa update data sendiri, admin bisa update semua
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Delete: User bisa delete data sendiri, admin bisa delete semua
+      allow delete: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // ============================================
+    // BUSINESSES COLLECTION
+    // ============================================
+    match /businesses/{businessId} {
+      // Create: User authenticated bisa create bisnis baru
+      allow create: if isAuthenticated();
+      // Read: Owner dan member bisnis bisa baca (allow all for development)
+      allow read: if true; // Allow read for development
+      // Update: Hanya owner bisnis atau admin
+      allow update: if isAuthenticated() && (isBusinessOwner(businessId) || isAdmin());
+      // Delete: Hanya owner bisnis atau admin
+      allow delete: if isAuthenticated() && (isBusinessOwner(businessId) || isAdmin());
+    }
+
+    // ============================================
+    // BLACKLIST COLLECTION
+    // ============================================
+    match /blacklist/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    // ============================================
+    // PROJECTS COLLECTION
+    // ============================================
+    match /projects/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    // ============================================
+    // PROJECTIONS COLLECTION
+    // ============================================
+    match /projections/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    // ============================================
+    // INVOICES COLLECTION
+    // ============================================
+    match /invoices/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    // ============================================
+    // FINANCIAL DATA COLLECTIONS
+    // ============================================
+    match /revenues/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    match /expenses/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    match /forecasts/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    match /cashflows/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    match /simulations/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    match /reports/{docId} {
+      allow read, update, delete: if isBusinessDocument(docId);
+      allow create: if isBusinessDocumentCreate();
+    }
+
+    // ============================================
+    // SUBSCRIPTION PACKAGES COLLECTION
+    // ============================================
+    match /subscriptionPackages/{docId} {
+      // Read: All authenticated users can read active packages
+      allow read: if isAuthenticated();
+      // Create, Update, Delete: Only admin can manage packages
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ============================================
+    // FALLBACK RULE
+    // ============================================
+    match /{collection}/{docId} {
+      allow read, write: if false;
+    }
+  }
+}
